@@ -2,7 +2,7 @@ name: Auto Delete Old Backups
 on:
   schedule:
     - cron: "0 * * * *"  # 每小时整点运行一次（UTC时间）
-  workflow_dispatch:     # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   delete:
@@ -17,9 +17,15 @@ jobs:
           python-version: "3.10"
 
       - name: Install dependencies
-        run: pip install huggingface-hub
+        run: |
+          pip install huggingface-hub
+          pip install pytz tenacity  # 新增依赖
 
       - name: Run Delete Script
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}  # 从GitHub Secrets读取令牌
-        run: python delete_old_backups.py
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python delete_old_backups.py
+          # 将日志文件作为产物保存（调试用）
+          echo "=== 删除日志 ==="
+          cat delete_backups.log
