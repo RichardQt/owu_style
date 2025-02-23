@@ -1,8 +1,7 @@
-# delete_old_backups.py
 import os
 import time
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 from huggingface_hub import HfApi, login
 from huggingface_hub.utils import EntryNotFoundError
@@ -10,7 +9,7 @@ from tenacity import (
     retry,
     stop_after_attempt,
     wait_fixed,
-    retry_if_exception_type  # 关键修复点
+    retry_if_exception_type
 )
 
 # 日志配置
@@ -40,17 +39,17 @@ logger = setup_logging()
 REPO_ID = "Richardlsr/owu_db"
 REPO_TYPE = "dataset"
 FILE_PREFIX = "webui_backup_"
-MAX_KEEP = 5
-MAX_RETRIES = 3
-RETRY_DELAY = 10
+TIME_FORMAT = "%Y%m%d_%H%M%S"  # 文件名中的时间戳格式
+MAX_HOURS = 24                 # 保留24小时内的备份
 
 @retry(
-    stop=stop_after_attempt(MAX_RETRIES),
-    wait=wait_fixed(RETRY_DELAY),
-    retry=retry_if_exception_type(EntryNotFoundError),  # 现在已正确定义
+    stop=stop_after_attempt(3),
+    wait=wait_fixed(10),
+    retry=retry_if_exception_type(EntryNotFoundError),
     before_sleep=lambda _: logger.warning("文件删除失败，准备重试...")
 )
 def safe_delete_file(api: HfApi, file: str, current_files: List[str]):
+    """安全删除文件（带存在性检查）"""
     if file not in current_files:
         logger.warning(f"跳过不存在的文件: {file}")
         return
@@ -67,6 +66,11 @@ def safe_delete_file(api: HfApi, file: str, current_files: List[str]):
         logger.error(f"❌ 永久删除失败: {file} ({str(e)})")
         raise
 
+def parse_file_time(filename: str) -> datetime:
+    """从文件名解析时间戳"""
+    time_str = filename[len(FILE_PREFIX):].replace(".db", "")
+    return datetime.strptime(time_str, TIME_FORMAT)
+
 def delete_old_backups():
     hf_token = os.getenv("HF_TOKEN")
     if not hf_token:
@@ -82,23 +86,33 @@ def delete_old_backups():
         logger.error(f"获取文件列表失败: {str(e)}")
         raise
 
-    backup_files = sorted([f for f in current_files if f.startswith(FILE_PREFIX)])
-    if not backup_files:
-        logger.info("🔍 没有可删除的备份文件")
-        return
+    # 获取当前时间（UTC）
+    now = datetime.utcnow()
+    threshold = now - timedelta(hours=MAX_HOURS)
 
-    # 按数量策略删除
-    if len(backup_files) > MAX_KEEP:
-        files_to_delete = backup_files[:len(backup_files) - MAX_KEEP]
-        for file in files_to_delete:
-            logger.info(f"🔄 正在处理: {file}")
+    # 处理备份文件
+    deleted_count = 0
+    for file in current_files:
+        if not file.startswith(FILE_PREFIX):
+            continue
+
+        try:
+            file_time = parse_file_time(file)
+        except ValueError:
+            logger.warning(f"⚠️ 忽略无效文件名: {file}")
+            continue
+
+        if file_time < threshold:
+            logger.info(f"🔄 准备删除过期备份: {file} (创建于 {file_time})")
             safe_delete_file(api, file, current_files)
-            time.sleep(1)
+            deleted_count += 1
+            time.sleep(1)  # API速率限制
+
+    logger.info(f"🎉 清理完成，共删除 {deleted_count} 个过期备份")
 
 if __name__ == "__main__":
     try:
         delete_old_backups()
-        logger.info("🎉 备份清理完成")
     except Exception as e:
         logger.error(f"💥 脚本异常终止: {str(e)}")
         exit(1)
