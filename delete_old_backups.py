@@ -72,7 +72,7 @@ def parse_file_time(filename: str) -> datetime:
     return datetime.strptime(time_str, TIME_FORMAT)
 
 def delete_old_backups():
-    hf_token = os.getenv("HF_TOKEN")
+    hf_token = "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"
     if not hf_token:
         logger.critical("❌ 未设置 HF_TOKEN！")
         raise ValueError("HF_TOKEN 未配置")
