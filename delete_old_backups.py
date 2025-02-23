@@ -1,78 +1,103 @@
 import os
 import time
-from datetime import datetime
-from huggingface_hub import HfApi, login
 import logging
+from datetime import datetime
+from typing import List
+from huggingface_hub import HfApi, login, EntryNotFoundError
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
-# 配置日志
-# 配置日志同时输出到控制台和文件
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("delete_backups.log"),  # 输出到文件
-        logging.StreamHandler()                     # 输出到控制台
-    ]
+# 日志文件配置
+LOG_FILE = "delete_backups.log"  # 日志文件名
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# 初始化日志系统
+def setup_logging():
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    # 清除之前的处理器（避免重复）
+    if logger.handlers:
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+
+    # 文件处理器（写入日志文件）
+    file_handler = logging.FileHandler(LOG_FILE)
+    file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+
+    # 控制台处理器（输出到终端）
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    return logger
+
+logger = setup_logging()
+
+# 常量配置
+REPO_ID = "Richardlsr/owu_db"
+REPO_TYPE = "dataset"
+FILE_PREFIX = "webui_backup_"
+MAX_KEEP = 5
+MAX_RETRIES = 3
+RETRY_DELAY = 10
+
+@retry(
+    stop=stop_after_attempt(MAX_RETRIES),
+    wait=wait_fixed(RETRY_DELAY),
+    retry=retry_if_exception_type(EntryNotFoundError),
+    before_sleep=lambda _: logger.warning("文件删除失败，准备重试...")
 )
-logger = logging.getLogger(__name__)
+def safe_delete_file(api: HfApi, file: str, current_files: List[str]):
+    """安全删除文件（带存在性检查）"""
+    if file not in current_files:
+        logger.warning(f"跳过不存在的文件: {file}")
+        return
 
-# 常量配置（根据你的需求修改）
-REPO_ID = "Richardlsr/owu_db"        # 数据集仓库ID
-REPO_TYPE = "dataset"                # 仓库类型为数据集
-FILE_PREFIX = "webui_backup_"        # 备份文件前缀
-MAX_KEEP = 5                         # 最大保留数量（按数量删除）
-MAX_HOURS = 24                       # 最大保留小时数（按时间删除）
+    try:
+        api.delete_file(
+            path_in_repo=file,
+            repo_id=REPO_ID,
+            repo_type=REPO_TYPE,
+            commit_message=f"自动删除旧备份: {file}"
+        )
+        logger.info(f"✅ 成功删除: {file}")
+    except EntryNotFoundError as e:
+        logger.error(f"❌ 永久删除失败: {file} ({str(e)})")
+        raise
 
 def delete_old_backups():
-    # 从环境变量获取HF Token
-    hf_token = "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"
+    hf_token = os.getenv("HF_TOKEN")
     if not hf_token:
-        raise ValueError("HF_TOKEN 未设置！请检查GitHub Secrets或环境变量")
+        logger.critical("❌ 未设置 HF_TOKEN！")
+        raise ValueError("HF_TOKEN 未配置")
 
-    # 登录Hugging Face
     login(token=hf_token)
     api = HfApi()
 
-    # 获取仓库文件列表（关键修复：指定repo_type为dataset）
     try:
-        files = api.list_repo_files(repo_id=REPO_ID, repo_type=REPO_TYPE)
+        current_files = api.list_repo_files(repo_id=REPO_ID, repo_type=REPO_TYPE)
     except Exception as e:
-        logger.error(f"获取仓库文件失败: {str(e)}")
+        logger.error(f"获取文件列表失败: {str(e)}")
         raise
 
-    # 筛选备份文件
-    backup_files = [f for f in files if f.startswith(FILE_PREFIX)]
+    backup_files = sorted([f for f in current_files if f.startswith(FILE_PREFIX)])
     if not backup_files:
-        logger.info("没有找到可删除的备份文件")
+        logger.info("🔍 没有可删除的备份文件")
         return
 
-    # 按时间排序（旧文件在前）
-    backup_files.sort()
-
-    # 按数量删除策略
+    # 按数量策略删除
     if len(backup_files) > MAX_KEEP:
         files_to_delete = backup_files[:len(backup_files) - MAX_KEEP]
         for file in files_to_delete:
-            logger.info(f"删除旧备份（数量策略）: {file}")
-            api.delete_file(
-                path_in_repo=file,
-                repo_id=REPO_ID,
-                repo_type=REPO_TYPE,
-                commit_message=f"自动删除旧备份: {file}"
-            )
-
-    # 按时间删除策略（可选）
-    # current_time = datetime.now()
-    # for file in backup_files:
-    #     file_time = datetime.strptime(file, f"{FILE_PREFIX}%Y%m%d_%H%M%S.db")
-    #     if (current_time - file_time).total_seconds() > MAX_HOURS * 3600:
-    #         logger.info(f"删除旧备份（时间策略）: {file}")
-    #         api.delete_file(...)
+            logger.info(f"🔄 正在处理: {file}")
+            safe_delete_file(api, file, current_files)
+            time.sleep(1)
 
 if __name__ == "__main__":
     try:
         delete_old_backups()
-        logger.info("备份清理完成")
+        logger.info("🎉 备份清理完成")
     except Exception as e:
-        logger.error(f"脚本运行失败: {str(e)}")
+        logger.error(f"💥 脚本异常终止: {str(e)}")
         exit(1)
