@@ -1,0 +1,25 @@
+name: Auto Delete Old Backups
+on:
+  schedule:
+    - cron: "0 * * * *"  # 每小时整点运行一次（UTC时间）
+  workflow_dispatch:     # 允许手动触发
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install huggingface-hub
+
+      - name: Run Delete Script
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}  # 从GitHub Secrets读取令牌
+        run: python delete_old_backups.py
