@@ -7,7 +7,7 @@ import pytz
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 # 配置参数
-HF_TOKEN = os.getenv("HF_TOKEN")
+HF_TOKEN = "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"
 REPO_ID = "Richardlsr/owu_db"
 BACKUP_PREFIX = "webui_backup"
 RETENTION_MODE = "count"  # 或 "time"
