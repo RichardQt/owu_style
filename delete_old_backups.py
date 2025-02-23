@@ -5,7 +5,15 @@ from huggingface_hub import HfApi, login
 import logging
 
 # 配置日志
-logging.basicConfig(level=logging.INFO)
+# 配置日志同时输出到控制台和文件
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("delete_backups.log"),  # 输出到文件
+        logging.StreamHandler()                     # 输出到控制台
+    ]
+)
 logger = logging.getLogger(__name__)
 
 # 常量配置（根据你的需求修改）
