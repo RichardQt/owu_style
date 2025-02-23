@@ -1,6 +1,10 @@
+# 【CDN加速地址】：
+``` html
+https://jsdelivr.240723.xyz/gh/RichardQt/owu_style
+```
+---
 # 【openwebui 美化】实现 Open-webui 代码框的自动折叠、mac 样式代码块，修改 open WebUI 字体样式。
 
----
 source_url: https://linux.do/t/topic/440439
 ---
 
