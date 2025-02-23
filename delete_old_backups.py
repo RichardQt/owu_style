@@ -3,8 +3,10 @@ import time
 import logging
 from datetime import datetime
 from typing import List
-from huggingface_hub import HfApi, login, EntryNotFoundError
-from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+from huggingface_hub import HfApi, login
+from huggingface_hub.utils import EntryNotFoundError  # 正确导入路径
+import logging
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 # 日志文件配置
 LOG_FILE = "delete_backups.log"  # 日志文件名
