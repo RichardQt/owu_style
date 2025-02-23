@@ -17,7 +17,7 @@ MAX_HOURS = 24                       # 最大保留小时数（按时间删除�
 
 def delete_old_backups():
     # 从环境变量获取HF Token
-    hf_token = os.getenv("HF_TOKEN")
+    hf_token = "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"
     if not hf_token:
         raise ValueError("HF_TOKEN 未设置！请检查GitHub Secrets或环境变量")
 
