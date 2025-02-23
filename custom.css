@@ -1,20 +1,20 @@
 @font-face {
     font-family: 'Dank Mono';
-    src: url('https://image.coderman.site/webui/src/DankMono-Regular.woff2') format('woff2');
+    src: url('https://jsdelivr.240723.xyz/gh/RichardQt/owu_style/fonts/DankMono-Regular.woff2') format('woff2');
     font-display: swap;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'Dank Mono';
-    src: url('https://image.coderman.site/webui/src/DankMono-Italic.woff2') format('woff2');
+    src: url('https://jsdelivr.240723.xyz/gh/RichardQt/owu_style/fonts/DankMono-Italic.woff2') format('woff2');
     font-display: swap;
     font-style: italic;
 }
 
 @font-face {
     font-family: 'JinBuTi';
-    src: url('https://image.coderman.site/webui/src/DingTalk-JinBuTi.woff2') format('woff2');
+    src: url('https://jsdelivr.240723.xyz/gh/RichardQt/owu_style/fonts/DingTalk-JinBuTi.woff2') format('woff2');
     font-display: swap;
 }
 
