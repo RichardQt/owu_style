@@ -1,32 +1,32 @@
+# delete_old_backups.py
 import os
 import time
 import logging
 from datetime import datetime
 from typing import List
 from huggingface_hub import HfApi, login
-from huggingface_hub.utils import EntryNotFoundError  # 正确导入路径
-import logging
-from tenacity import retry, stop_after_attempt, wait_fixed
+from huggingface_hub.utils import EntryNotFoundError
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_fixed,
+    retry_if_exception_type  # 关键修复点
+)
 
-# 日志文件配置
-LOG_FILE = "delete_backups.log"  # 日志文件名
+# 日志配置
+LOG_FILE = "delete_backups.log"
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
-# 初始化日志系统
 def setup_logging():
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
-    # 清除之前的处理器（避免重复）
     if logger.handlers:
         for handler in logger.handlers[:]:
             logger.removeHandler(handler)
 
-    # 文件处理器（写入日志文件）
     file_handler = logging.FileHandler(LOG_FILE)
     file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
-
-    # 控制台处理器（输出到终端）
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(logging.Formatter(LOG_FORMAT))
 
@@ -47,11 +47,10 @@ RETRY_DELAY = 10
 @retry(
     stop=stop_after_attempt(MAX_RETRIES),
     wait=wait_fixed(RETRY_DELAY),
-    retry=retry_if_exception_type(EntryNotFoundError),
+    retry=retry_if_exception_type(EntryNotFoundError),  # 现在已正确定义
     before_sleep=lambda _: logger.warning("文件删除失败，准备重试...")
 )
 def safe_delete_file(api: HfApi, file: str, current_files: List[str]):
-    """安全删除文件（带存在性检查）"""
     if file not in current_files:
         logger.warning(f"跳过不存在的文件: {file}")
         return
