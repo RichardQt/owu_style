@@ -29,3 +29,9 @@ jobs:
           # 将日志文件作为产物保存（调试用）
           echo "=== 删除日志 ==="
           cat delete_backups.log
+          
+      - name: Upload Log File
+        uses: actions/upload-artifact@v3
+        with:
+          name: backup-cleanup-log
+          path: delete_backups.log  # 上传日志文件作为产物
