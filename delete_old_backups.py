@@ -13,7 +13,9 @@ from tenacity import (
 )
 
 # 日志配置
-LOG_FILE = "delete_backups.log"
+# 日志配置
+REPO_ROOT = os.getenv("GITHUB_WORKSPACE", os.getcwd())  # 关键修改点
+LOG_FILE = os.path.join(REPO_ROOT, "delete_backups.log")  # 强制写入根目录
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 def setup_logging():
