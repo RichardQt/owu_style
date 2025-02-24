@@ -31,7 +31,7 @@ jobs:
           cat delete_backups.log
           
       - name: Upload Log File
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backup-cleanup-log
           path: delete_backups.log  # 上传日志文件作为产物
