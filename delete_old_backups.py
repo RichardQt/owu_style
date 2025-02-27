@@ -42,7 +42,7 @@ REPO_ID = "Richardlsr/owu_db"
 REPO_TYPE = "dataset"
 FILE_PREFIX = "webui_backup_"
 TIME_FORMAT = "%Y%m%d_%H%M%S"  # 文件名中的时间戳格式
-MAX_HOURS = 24                 # 保留24小时内的备份
+MAX_HOURS = 12                 # 保留24小时内的备份
 
 @retry(
     stop=stop_after_attempt(3),
