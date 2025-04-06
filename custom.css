@@ -35,8 +35,7 @@ body {
     margin: 1.2em 0;
 }
 
-.dark .language-javascript,
-.dark [class*="language-"] {
+.dark .language-javascript, .dark [class*="language-"] {
     background: #282c34 !important;
     box-shadow: 0 10px 30px 0 rgba(0, 0, 0, .4) !important;
 }
@@ -82,9 +81,7 @@ body {
     transition: all 0.2s ease-in-out !important;
 }
 
-.dark .save-code-button,
-.dark .copy-code-button,
-.dark .run-code-button {
+.dark .save-code-button, .dark .copy-code-button, .dark .run-code-button {
     background: #323842 !important;
     color: #abb2bf !important;
     border: 1px solid #3e4451 !important;
@@ -95,8 +92,7 @@ body {
     color: #222 !important;
 }
 
-.dark .save-code-button:hover,
-.dark .copy-code-button:hover {
+.dark .save-code-button:hover, .dark .copy-code-button:hover {
     background: #3e4451 !important;
     color: #fff !important;
 }
@@ -115,8 +111,7 @@ body {
     z-index: 10;
 }
 
-.dakr .language-javascript::before,
-.dakr [class*="language-"]::before {
+.dakr .language-javascript::before, .dakr [class*="language-"]::before {
     background: #fc625d;
     box-shadow: 20px 0 #fdbc40, 40px 0 #35cd4b;
 }
@@ -203,7 +198,6 @@ span.ͼc {
     color: #7d5fff !important;
 }
 
-
 span.ͼl {
     color: #6bddcd !important;
 }
@@ -275,6 +269,7 @@ span.ͼw {
     border-right: 1px solid #d1d5da !important;
     color: #586069 !important;
     padding-right: 10px !important;
+    font-family: "Dank Mono";
 }
 
 .dark .cm-gutters {
@@ -326,8 +321,11 @@ span.ͼw {
 
 /* 代码块折叠/展开样式添加与修改 */
 .cm-scroller {
-    padding-bottom: 40px;
     background-color: #f6f8fa;
+}
+
+#collapsed>.cm-scroller, #expanded>.cm-scroller {
+    padding-bottom: 40px;
 }
 
 .dark .cm-scroller {
@@ -438,4 +436,9 @@ span.ͼw {
 /* 只在折叠状态显示渐变遮罩 */
 .cm-editor#collapsed::after {
     opacity: 1;
+}
+
+/* 隐藏原始的折叠按钮 */
+div.flex.items-center.gap-0\.5 button.flex.gap-1.items-center:not(.run-code-button) {
+    display: none;
 }
